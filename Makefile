@@ -30,7 +30,7 @@ pkgconfig:
 src/sdb_version.h:
 	echo '#define SDB_VERSION "${SDBVER}"' > src/sdb_version.h
 
-CFILES=cdb.c buffer.c cdb_make.c ls.c ht.c sdb.c num.c base64.c
+CFILES=cdb.c buffer.c cdb_make.c ls.c ht.c new_ht.c sdb.c num.c base64.c
 CFILES+=json.c ns.c lock.c util.c disk.c query.c array.c fmt.c main.c
 EMCCFLAGS=-O2 -s EXPORTED_FUNCTIONS="['_sdb_querys','_sdb_new0']"
 #EMCCFLAGS+=--embed-file sdb.data
@@ -64,10 +64,10 @@ w32dist:
 	rm -rf sdb-${SDBVER}
 
 install-dirs:
-	$(INSTALL_DIR) ${DESTDIR}${MANDIR} ${DESTDIR}${LIBDIR}/pkgconfig ${DESTDIR}${BINDIR} 
+	$(INSTALL_DIR) ${DESTDIR}${MANDIR} ${DESTDIR}${LIBDIR}/pkgconfig ${DESTDIR}${BINDIR}
 	$(INSTALL_DIR) ${DESTDIR}${DATADIR}/vala/vapi ${DESTDIR}${INCDIR}/sdb
 
-INCFILES=src/sdb.h src/sdb_version.h src/cdb.h src/ht.h src/types.h
+INCFILES=src/sdb.h src/sdb_version.h src/cdb.h src/ht.h src/new_ht.h src/types.h
 INCFILES+=src/ls.h src/cdb_make.h src/buffer.h src/config.h
 
 install: pkgconfig install-dirs
@@ -123,6 +123,7 @@ symstall: install-dirs
 	ln -fs ${PWD}/src/sdb_version.h ${DESTDIR}${INCDIR}/sdb
 	ln -fs ${PWD}/src/cdb.h ${DESTDIR}${INCDIR}/sdb
 	ln -fs ${PWD}/src/ht.h ${DESTDIR}${INCDIR}/sdb
+	ln -fs ${PWD}/src/new_ht.h ${DESTDIR}${INCDIR}/sdb
 	ln -fs ${PWD}/src/types.h ${DESTDIR}${INCDIR}/sdb
 	ln -fs ${PWD}/src/ls.h ${DESTDIR}${INCDIR}/sdb
 	ln -fs ${PWD}/src/cdb_make.h ${DESTDIR}${INCDIR}/sdb

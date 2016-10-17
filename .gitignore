@@ -32,10 +32,12 @@ test/siolpain
 test/syncget
 test/test.db
 test/unit/test_hash
-test/unit/test_hash.dSYM/
+test/unit/test_newhash
+test/unit/*.dSYM/
 src/libsdb.so*
 src/sdb
 src/sdb_version.h
+src/*.dylib
 memcache/cmds
 memcache/cmds.h
 memcache/mcsdbc
