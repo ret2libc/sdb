@@ -6,20 +6,9 @@
 #include "ls.h"
 #include "types.h"
 
-/* tune the hashtable */
-#define INSERTORDER 0
-#define GROWABLE 0
-#define USE_KEYLEN 1
-#define EXCHANGE 1
+struct ht_kv;
 
-typedef struct ht_kv {
-	char *key;
-	void *value;
-	ut32 key_len;
-	ut32 value_len;
-} HtKv;
-
-typedef void (*HtKvFreeFunc)(HtKv *);
+typedef void (*HtKvFreeFunc)(struct ht_kv *);
 typedef char* (*DupKey)(void *);
 typedef char* (*DupValue)(void *);
 typedef size_t (*CalcSize)(void *);
@@ -27,6 +16,13 @@ typedef ut32 (*HashFunction)(const char*);
 typedef int (*ListComparator)(const char *a, const char *b);
 typedef bool (*HtForeachCallback)(void *user, const char *k, void *v);
 
+typedef struct ht_kv {
+	char *key;
+	void *value;
+	ut32 key_len;
+	ut32 value_len;
+	HtKvFreeFunc freefn;
+} HtKv;
 
 /** ht **/
 typedef struct ht_t {
@@ -43,9 +39,6 @@ typedef struct ht_t {
 	SdbList* deleted;
 	ut32 load_factor;  	// load factor before doubling in size.
 	ut32 prime_idx;
-#if INSERTORDER
-	SdbList* list;
-#endif
 } SdbHt;
 
 // Create a new RHashTable.

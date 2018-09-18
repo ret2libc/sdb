@@ -762,16 +762,6 @@ SDB_API bool sdb_foreach(Sdb* s, SdbForeachCallback cb, void *user) {
 	if (!result) {
 		return sdb_foreach_end (s, false);
 	}
-#if INSERTORDER
-	ls_foreach (s->ht->list, iter, kv) {
-		if (!kv || !kv->value || !*kv->value) {
-			continue;
-		}
-		if (!cb (user, kv->key, kv->value)) {
-			return sdb_foreach_end (s, false);
-		}
-	}
-#else
 	ut32 i;
 	for (i = 0; i < s->ht->size; i++) {
 		ls_foreach (s->ht->table[i], iter, kv) {
@@ -783,7 +773,6 @@ SDB_API bool sdb_foreach(Sdb* s, SdbForeachCallback cb, void *user) {
 			}
 		}
 	}
-#endif
 	return sdb_foreach_end (s, true);
 }
 
