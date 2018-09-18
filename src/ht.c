@@ -96,20 +96,30 @@ SDB_API void ht_free_deleted(SdbHt* ht) {
 	}
 }
 
+static bool internal_ht_insert_kv(SdbHt *ht, HtKv *kv, bool update);
+
 // Increases the size of the hashtable by 2.
 static void internal_ht_grow(SdbHt* ht) {
 	SdbHt* ht2;
 	SdbHt swap;
 	HtKv* kv;
-	SdbListIter* iter;
+	SdbListIter *iter, *tmp;
 	ut32 i, sz = ht_primes_sizes[ht->prime_idx];
 	ht2 = internal_ht_new (sz, ht->hashfn, ht->cmp, ht->dupkey, ht->dupvalue,
 		(HtKvFreeFunc)ht->freefn, ht->calcsizeK, ht->calcsizeV);
 	ht2->prime_idx = ht->prime_idx;
 	for (i = 0; i < ht->size; i++) {
-		ls_foreach (ht->table[i], iter, kv) {
-			(void)ht_insert (ht2, kv->key, kv->value);
+		if (!ht->table[i]) {
+			continue;
 		}
+
+		SdbListFree ofreefn = ht->table[i]->free;
+		ht->table[i]->free = NULL;
+		ls_foreach_safe (ht->table[i], iter, tmp, kv) {
+			internal_ht_insert_kv (ht2, kv, false);
+			ls_delete (ht->table[i], iter);
+		}
+		ht->table[i]->free = ofreefn;
 	}
 	// And now swap the internals.
 	swap = *ht;
@@ -148,7 +158,7 @@ static bool internal_ht_insert_kv(SdbHt *ht, HtKv *kv, bool update) {
 
 static bool internal_ht_insert(SdbHt* ht, bool update, const char* key,
 				void* value) {
-	if (!ht || !key || !value) {
+	if (!ht || !key) {
 		return false;
 	}
 	HtKv* kv = calloc (1, sizeof (HtKv));
@@ -251,7 +261,7 @@ SDB_API void ht_foreach(SdbHt *ht, HtForeachCallback cb, void *user) {
 	SdbListIter *iter;
 	for (i = 0; i < ht->size; i++) {
 		ls_foreach (ht->table[i], iter, kv) {
-			if (!kv || !kv->key || !kv->value) {
+			if (!kv || !kv->key) {
 				continue;
 			}
 			if (!cb (user, kv->key, kv->value)) {
