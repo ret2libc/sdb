@@ -11,7 +11,7 @@ struct ht_kv;
 typedef void (*HtKvFreeFunc)(struct ht_kv *);
 typedef char* (*DupKey)(void *);
 typedef char* (*DupValue)(void *);
-typedef size_t (*CalcSize)(void *);
+typedef size_t (*CalcSize)(const void *);
 typedef ut32 (*HashFunction)(const char*);
 typedef int (*ListComparator)(const char *a, const char *b);
 typedef bool (*HtForeachCallback)(void *user, const char *k, void *v);
@@ -36,8 +36,7 @@ typedef struct ht_t {
 	CalcSize calcsizeV;  	// Function to determine the value's size
 	HtKvFreeFunc freefn;  	// Function to free the keyvalue store
 	SdbList /*<SdbKv>*/** table;  // Actual table.
-	SdbList* deleted;
-	ut32 load_factor;  	// load factor before doubling in size.
+	float load_factor;  	// load factor before doubling in size.
 	ut32 prime_idx;
 } SdbHt;
 
@@ -46,15 +45,15 @@ typedef struct ht_t {
 // If keydup or valdup are null it will be used an assignment
 // If keySize or valueSize are null it will be used strlen internally
 SDB_API SdbHt* ht_new(DupValue valdup, HtKvFreeFunc pair_free, CalcSize valueSize);
+SDB_API SdbHt* ht_new_size(size_t initial_size, DupValue valdup, HtKvFreeFunc pair_free, CalcSize valueSize);
 // Destroy a hashtable and all of its entries.
 SDB_API void ht_free(SdbHt* ht);
-SDB_API void ht_free_deleted(SdbHt* ht);
 // Insert a new Key-Value pair into the hashtable. If the key already exists, returns false.
-SDB_API bool ht_insert(SdbHt* ht, const char* key, void* value);
+SDB_API bool ht_insert(SdbHt* ht, char* key, void* value);
 //Insert a new HtKv in the hashtable
 SDB_API bool ht_insert_kv(SdbHt *ht, HtKv *kv, bool update);
 // Insert a new Key-Value pair into the hashtable, or updates the value if the key already exists.
-SDB_API bool ht_update(SdbHt* ht, const char* key, void* value);
+SDB_API bool ht_update(SdbHt* ht, char* key, void* value);
 // Delete a key from the hashtable.
 SDB_API bool ht_delete(SdbHt* ht, const char* key);
 // Find the value corresponding to the matching key.

@@ -715,9 +715,6 @@ static int getbytes(Sdb *s, char *b, int len) {
 
 static bool sdb_foreach_end(Sdb *s, bool result) {
 	s->depth--;
-	if (!s->depth) {
-		ht_free_deleted (s->ht);
-	}
 	return result;
 }
 
