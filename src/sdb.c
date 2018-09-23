@@ -527,16 +527,16 @@ SDB_API SdbKv* sdb_kv_new2(const char *k, int kl, const char *v, int vl) {
 		return NULL;
 	}
 	kv = R_NEW0 (SdbKv);
-	kv->key_len = kl;
-	kv->key = malloc (SDBKV_KEY_LEN (kv) + 1);
+	kv->base.key_len = kl;
+	kv->base.key = malloc (SDBKV_KEY_LEN (kv) + 1);
 	if (!SDBKV_KEY (kv)) {
 		free (kv);
 		return NULL;
 	}
 	memcpy (SDBKV_KEY (kv), k, SDBKV_KEY_LEN (kv) + 1);
-	kv->value_len = vl;
+	kv->base.value_len = vl;
 	if (vl) {
-		kv->value = malloc (vl + 1);
+		kv->base.value = malloc (vl + 1);
 		if (!SDBKV_VALUE (kv)) {
 			free (SDBKV_KEY (kv));
 			free (kv);
@@ -544,8 +544,8 @@ SDB_API SdbKv* sdb_kv_new2(const char *k, int kl, const char *v, int vl) {
 		}
 		memcpy (SDBKV_VALUE (kv), v, vl + 1);
 	} else {
-		kv->value = NULL;
-		kv->value_len = 0;
+		kv->base.value = NULL;
+		kv->base.value_len = 0;
 	}
 	kv->cas = nextcas ();
 	kv->expire = 0LL;
@@ -600,16 +600,16 @@ static ut32 sdb_set_internal(Sdb* s, const char *key, char *val, int owned, ut32
 			}
 			kv->cas = cas = nextcas ();
 			if (owned) {
-				kv->value_len = vlen;
+				kv->base.value_len = vlen;
 				free (SDBKV_VALUE (kv));
-				kv->value = val; // owned
+				kv->base.value = val; // owned
 			} else {
 				if ((ut32)vlen > SDBKV_VALUE_LEN (kv)) {
 					free (SDBKV_VALUE (kv));
-					kv->value = malloc (vlen + 1);
+					kv->base.value = malloc (vlen + 1);
 				}
 				memcpy (SDBKV_VALUE (kv), val, vlen + 1);
-				kv->value_len = vlen;
+				kv->base.value_len = vlen;
 			}
 		} else {
 			sdb_ht_delete (s->ht, key);
@@ -622,8 +622,8 @@ static ut32 sdb_set_internal(Sdb* s, const char *key, char *val, int owned, ut32
 	if (owned) {
 		kv = sdb_kv_new2 (key, klen, NULL, 0);
 		if (kv) {
-			kv->value = val;
-			kv->value_len = vlen;
+			kv->base.value = val;
+			kv->base.value_len = vlen;
 		}
 	} else {
 		kv = sdb_kv_new2 (key, klen, val, vlen);
@@ -650,8 +650,8 @@ static int sdb_foreach_list_cb(void *user, const char *k, const char *v) {
 	SdbList *list = (SdbList *)user;
 	SdbKv *kv = R_NEW0 (SdbKv);
 	/* seems like some k/v are constructed in the stack and cant be used after returning */
-	kv->key = strdup (k);
-	kv->value = strdup (v);
+	kv->base.key = strdup (k);
+	kv->base.value = strdup (v);
 	ls_append (list, kv);
 	return 1;
 }
@@ -679,11 +679,11 @@ typedef struct {
 
 static int sdb_foreach_match_cb(void *user, const char *k, const char *v) {
 	_match_sdb_user *o = (_match_sdb_user*)user;
-	SdbKv tkv = { .key = (char*)k, .value = (char*)v };
+	SdbKv tkv = { .base.key = (char*)k, .base.value = (char*)v };
 	if (sdb_kv_match (&tkv, o->expr)) {
 		SdbKv *kv = R_NEW0 (SdbKv);
-		kv->key = strdup (k);
-		kv->value = strdup (v);
+		kv->base.key = strdup (k);
+		kv->base.value = strdup (v);
 		ls_append (o->list, kv);
 		if (o->single) {
 			return 0;
@@ -841,10 +841,10 @@ SDB_API SdbKv *sdb_dump_next(Sdb* s) {
 	}
 	vl--;
 	strncpy (SDBKV_KEY (&s->tmpkv), k, SDB_KSZ - 1);
-	s->tmpkv.key[SDB_KSZ - 1] = '\0';
+	s->tmpkv.base.key[SDB_KSZ - 1] = '\0';
 	free (SDBKV_VALUE (&s->tmpkv));
-	s->tmpkv.value = v;
-	s->tmpkv.value_len = vl;
+	s->tmpkv.base.value = v;
+	s->tmpkv.base.value_len = vl;
 	return &s->tmpkv;
 }
 

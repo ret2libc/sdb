@@ -11,10 +11,10 @@ static bool sdb_ht_internal_insert(SdbHt* ht, const char* key,
 	}
 	SdbKv* kvp = calloc (1, sizeof (SdbKv));
 	if (kvp) {
-		kvp->key = strdup ((void *)key);
-		kvp->value = strdup ((void *)value);
-		kvp->key_len = strlen (SDBKV_KEY (kvp));
-		kvp->value_len = strlen (SDBKV_VALUE (kvp));
+		kvp->base.key = strdup ((void *)key);
+		kvp->base.value = strdup ((void *)value);
+		kvp->base.key_len = strlen (SDBKV_KEY (kvp));
+		kvp->base.value_len = strlen (SDBKV_VALUE (kvp));
 		kvp->expire = 0;
 		return ht_insert_kv (ht, (HtKv*)kvp, update);
 	}

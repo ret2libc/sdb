@@ -6,18 +6,15 @@
 /** keyvalue pair **/
 typedef struct sdb_kv {
 	//sub of HtKv so we can cast safely
-	char *key;
-	char *value;
-	ut32 key_len;
-	ut32 value_len;
+	HtKv base;
 	ut32 cas;
 	ut64 expire;
 } SdbKv;
 
-#define SDBKV_KEY(kv) ((kv)->key)
-#define SDBKV_VALUE(kv) ((kv)->value)
-#define SDBKV_KEY_LEN(kv) ((kv)->key_len)
-#define SDBKV_VALUE_LEN(kv) ((kv)->value_len)
+#define SDBKV_KEY(kv) ((kv)->base.key)
+#define SDBKV_VALUE(kv) ((char *)(kv)->base.value)
+#define SDBKV_KEY_LEN(kv) ((kv)->base.key_len)
+#define SDBKV_VALUE_LEN(kv) ((kv)->base.value_len)
 
 SDB_API SdbKv* sdb_kv_new2(const char *k, int kl, const char *v, int vl);
 extern SdbKv* sdb_kv_new(const char *k, const char *v);
