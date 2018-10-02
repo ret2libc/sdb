@@ -185,7 +185,7 @@ static void sdb_fini(Sdb* s, int donull) {
 	free (s->ndump);
 	free (s->dir);
 	free (SDBKV_VALUE (&s->tmpkv));
-	SDBKV_VALUE_LEN (&s->tmpkv) = 0;
+	s->tmpkv.value_len = 0;
 	if (donull) {
 		memset (s, 0, sizeof (Sdb));
 	}
@@ -484,20 +484,20 @@ SDB_API SdbKv* sdb_kv_new(const char *k, const char *v) {
 		vl = 0;
 	}
 	kv = R_NEW0 (SdbKv);
-	SDBKV_KEY_LEN (kv) = strlen (k);
+	kv->key_len = strlen (k);
 	if (key_len >= SDB_KSZ) {
 		free (kv);
 		return NULL;
 	}
-	SDBKV_KEY (kv) = malloc (SDBKV_KEY_LEN (kv) + 1);
+	kv->key = malloc (SDBKV_KEY_LEN (kv) + 1);
 	if (!SDBKV_KEY (kv)) {
 		free (kv);
 		return NULL;
 	}
 	memcpy (SDBKV_KEY (kv), k, SDBKV_KEY_LEN (kv) + 1);
-	SDBKV_VALUE_LEN (kv) = vl;
+	kv->value_len = vl;
 	if (vl) {
-		SDBKV_VALUE (kv) = malloc (vl + 1);
+		kv->value = malloc (vl + 1);
 		if (!SDBKV_VALUE (kv)) {
 			free (SDBKV_KEY (kv));
 			free (kv);
@@ -505,8 +505,8 @@ SDB_API SdbKv* sdb_kv_new(const char *k, const char *v) {
 		}
 		memcpy (SDBKV_VALUE (kv), v, vl + 1);
 	} else {
-		SDBKV_VALUE (kv) = NULL;
-		SDBKV_VALUE_LEN (kv) = 0;
+		kv->value = NULL;
+		kv->value_len = 0;
 	}
 	kv->cas = nextcas ();
 	kv->expire = 0LL;
@@ -527,16 +527,16 @@ SDB_API SdbKv* sdb_kv_new2(const char *k, int kl, const char *v, int vl) {
 		return NULL;
 	}
 	kv = R_NEW0 (SdbKv);
-	SDBKV_KEY_LEN (kv) = kl;
-	SDBKV_KEY (kv) = malloc (SDBKV_KEY_LEN (kv) + 1);
+	kv->key_len = kl;
+	kv->key = malloc (SDBKV_KEY_LEN (kv) + 1);
 	if (!SDBKV_KEY (kv)) {
 		free (kv);
 		return NULL;
 	}
 	memcpy (SDBKV_KEY (kv), k, SDBKV_KEY_LEN (kv) + 1);
-	SDBKV_VALUE_LEN (kv) = vl;
+	kv->value_len = vl;
 	if (vl) {
-		SDBKV_VALUE (kv) = malloc (vl + 1);
+		kv->value = malloc (vl + 1);
 		if (!SDBKV_VALUE (kv)) {
 			free (SDBKV_KEY (kv));
 			free (kv);
@@ -544,8 +544,8 @@ SDB_API SdbKv* sdb_kv_new2(const char *k, int kl, const char *v, int vl) {
 		}
 		memcpy (SDBKV_VALUE (kv), v, vl + 1);
 	} else {
-		SDBKV_VALUE (kv) = NULL;
-		SDBKV_VALUE_LEN (kv) = 0;
+		kv->value = NULL;
+		kv->value_len = 0;
 	}
 	kv->cas = nextcas ();
 	kv->expire = 0LL;
@@ -600,16 +600,16 @@ static ut32 sdb_set_internal(Sdb* s, const char *key, char *val, int owned, ut32
 			}
 			kv->cas = cas = nextcas ();
 			if (owned) {
-				SDBKV_VALUE_LEN (kv) = vlen;
+				kv->value_len = vlen;
 				free (SDBKV_VALUE (kv));
-				SDBKV_VALUE (kv) = val; // owned
+				kv->value = val; // owned
 			} else {
 				if ((ut32)vlen > SDBKV_VALUE_LEN (kv)) {
 					free (SDBKV_VALUE (kv));
-					SDBKV_VALUE (kv) = malloc (vlen + 1);
+					kv->value = malloc (vlen + 1);
 				}
 				memcpy (SDBKV_VALUE (kv), val, vlen + 1);
-				SDBKV_VALUE_LEN (kv) = vlen;
+				kv->value_len = vlen;
 			}
 		} else {
 			sdb_ht_delete (s->ht, key);
@@ -622,8 +622,8 @@ static ut32 sdb_set_internal(Sdb* s, const char *key, char *val, int owned, ut32
 	if (owned) {
 		kv = sdb_kv_new2 (key, klen, NULL, 0);
 		if (kv) {
-			SDBKV_VALUE (kv) = val;
-			SDBKV_VALUE_LEN (kv) = vlen;
+			kv->value = val;
+			kv->value_len = vlen;
 		}
 	} else {
 		kv = sdb_kv_new2 (key, klen, val, vlen);
@@ -650,8 +650,8 @@ static int sdb_foreach_list_cb(void *user, const char *k, const char *v) {
 	SdbList *list = (SdbList *)user;
 	SdbKv *kv = R_NEW0 (SdbKv);
 	/* seems like some k/v are constructed in the stack and cant be used after returning */
-	SDBKV_KEY (kv) = strdup (k);
-	SDBKV_VALUE (kv) = strdup (v);
+	kv->key = strdup (k);
+	kv->value = strdup (v);
 	ls_append (list, kv);
 	return 1;
 }
@@ -682,8 +682,8 @@ static int sdb_foreach_match_cb(void *user, const char *k, const char *v) {
 	SdbKv tkv = { .key = (char*)k, .value = (char*)v };
 	if (sdb_kv_match (&tkv, o->expr)) {
 		SdbKv *kv = R_NEW0 (SdbKv);
-		SDBKV_KEY (kv) = strdup (k);
-		SDBKV_VALUE (kv) = strdup (v);
+		kv->key = strdup (k);
+		kv->value = strdup (v);
 		ls_append (o->list, kv);
 		if (o->single) {
 			return 0;
@@ -857,8 +857,8 @@ SDB_API SdbKv *sdb_dump_next(Sdb* s) {
 	strncpy (SDBKV_KEY (&s->tmpkv), k, SDB_KSZ - 1);
 	s->tmpkv.key[SDB_KSZ - 1] = '\0';
 	free (SDBKV_VALUE (&s->tmpkv));
-	SDBKV_VALUE (&s->tmpkv) = v;
-	SDBKV_VALUE_LEN (&s->tmpkv) = vl;
+	s->tmpkv.value = v;
+	s->tmpkv.value_len = vl;
 	return &s->tmpkv;
 }
 
