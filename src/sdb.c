@@ -185,7 +185,7 @@ static void sdb_fini(Sdb* s, int donull) {
 	free (s->ndump);
 	free (s->dir);
 	free (SDBKV_VALUE (&s->tmpkv));
-	s->tmpkv.value_len = 0;
+	s->tmpkv.base.value_len = 0;
 	if (donull) {
 		memset (s, 0, sizeof (Sdb));
 	}
